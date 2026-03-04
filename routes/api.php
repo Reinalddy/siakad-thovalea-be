@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -76,3 +77,5 @@ Route::post('/students', [StudentController::class, 'store']);
 
 // Public Webhook for Payment Gateways (Outside auth:sanctum but protected by signature later)
 Route::post('finance/webhook', [\App\Http\Controllers\PaymentController::class, 'handleWebhook']);
+
+Route::post('/login', [AuthController::class, 'login']);
