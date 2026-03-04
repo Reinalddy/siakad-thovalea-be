@@ -16,11 +16,12 @@ Route::get('/user', function (Request $request) {
 // Apply auth:sanctum logic where required
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', MeController::class);
+
+    // Main Entities
+    Route::apiResource('courses', CourseController::class);
+    Route::apiResource('curriculums', CurriculumController::class);
+    Route::apiResource('schedules', ScheduleController::class);
 });
 
-// Main Entities
+// Assuming store is public for registration or requires specific middleware later.
 Route::post('/students', [StudentController::class, 'store']);
-
-Route::apiResource('courses', CourseController::class);
-Route::apiResource('curriculums', CurriculumController::class);
-Route::apiResource('schedules', ScheduleController::class);

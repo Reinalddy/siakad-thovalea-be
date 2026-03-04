@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreCourseRequest;
 use App\Http\Resources\CourseResource;
 use App\Models\Course;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class CourseController extends BaseController
 {
@@ -44,12 +44,24 @@ class CourseController extends BaseController
     /**
      * Store a newly created course.
      */
-    public function store(StoreCourseRequest $request): JsonResponse
+    public function store(Request $request): JsonResponse
     {
+        $validator = Validator::make($request->all(), [
+            'code' => ['required', 'string', 'unique:courses'],
+            'name' => ['required', 'string', 'max:255'],
+            'sks' => ['required', 'integer', 'min:1'],
+            'semester_type' => ['required', 'in:Odd,Even'],
+            'prerequisite_course_id' => ['nullable', 'exists:courses,id'],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError('Validation Error', $validator->errors()->toArray(), 422);
+        }
+
         try {
             DB::beginTransaction();
 
-            $course = Course::create($request->validated());
+            $course = Course::create($validator->validated());
 
             DB::commit();
 
@@ -70,13 +82,25 @@ class CourseController extends BaseController
     /**
      * Update the specified course.
      */
-    public function update(StoreCourseRequest $request, string $id): JsonResponse
+    public function update(Request $request, string $id): JsonResponse
     {
+        $validator = Validator::make($request->all(), [
+            'code' => ['required', 'string', 'unique:courses,code,' . $id],
+            'name' => ['required', 'string', 'max:255'],
+            'sks' => ['required', 'integer', 'min:1'],
+            'semester_type' => ['required', 'in:Odd,Even'],
+            'prerequisite_course_id' => ['nullable', 'exists:courses,id'],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError('Validation Error', $validator->errors()->toArray(), 422);
+        }
+
         try {
             DB::beginTransaction();
 
             $course = Course::findOrFail($id);
-            $course->update($request->validated());
+            $course->update($validator->validated());
 
             DB::commit();
 

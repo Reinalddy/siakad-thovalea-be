@@ -2,24 +2,38 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreScheduleRequest;
 use App\Http\Resources\ScheduleResource;
 use App\Models\Schedule;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class ScheduleController extends BaseController
 {
     /**
      * Store a newly created schedule with conflict detection.
      */
-    public function store(StoreScheduleRequest $request): JsonResponse
+    public function store(Request $request): JsonResponse
     {
+        $validator = Validator::make($request->all(), [
+            'course_id' => ['required', 'exists:courses,id'],
+            'classroom_id' => ['required', 'exists:classrooms,id'],
+            'lecturer_id' => ['required', 'exists:lecturers,id'],
+            'day' => ['required', 'string', 'in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday'],
+            'start_time' => ['required', 'date_format:H:i'],
+            'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError('Validation Error', $validator->errors()->toArray(), 422);
+        }
+
         try {
             DB::beginTransaction();
 
-            $validated = $request->validated();
+            $validated = $validator->validated();
             $day = $validated['day'];
             $startTime = $validated['start_time'];
             $endTime = $validated['end_time'];

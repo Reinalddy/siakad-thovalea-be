@@ -2,25 +2,39 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreCurriculumRequest;
 use App\Http\Resources\CurriculumResource;
 use App\Models\Course;
 use App\Models\Curriculum;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class CurriculumController extends BaseController
 {
     /**
      * Store a newly created curriculum and attach courses.
      */
-    public function store(StoreCurriculumRequest $request): JsonResponse
+    public function store(Request $request): JsonResponse
     {
+        $validator = Validator::make($request->all(), [
+            'study_program_id' => ['required', 'exists:study_programs,id'],
+            'name' => ['required', 'string', 'max:255'],
+            'year' => ['required', 'integer', 'min:2000'],
+            'is_active' => ['boolean'],
+            'course_ids' => ['nullable', 'array'],
+            'course_ids.*' => ['exists:courses,id'], // to attach multiple courses at creation
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError('Validation Error', $validator->errors()->toArray(), 422);
+        }
+
         try {
             DB::beginTransaction();
 
-            $validated = $request->validated();
+            $validated = $validator->validated();
 
             $curriculum = Curriculum::create([
                 'study_program_id' => $validated['study_program_id'],
