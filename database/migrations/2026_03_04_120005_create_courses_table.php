@@ -10,10 +10,13 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('lecturers', function (Blueprint $table) {
+        Schema::create('courses', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('user_id')->constrained()->onDelete('cascade');
-            $table->string('nidn')->unique();
+            $table->string('code')->unique();
+            $table->string('name');
+            $table->integer('sks');
+            $table->enum('semester_type', ['Odd', 'Even']);
+            $table->foreignUuid('prerequisite_course_id')->nullable()->constrained('courses')->nullOnDelete();
             $table->softDeletes();
             $table->timestamps();
         });
@@ -24,6 +27,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('lecturers');
+        Schema::dropIfExists('courses');
     }
 };

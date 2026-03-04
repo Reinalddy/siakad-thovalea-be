@@ -5,6 +5,9 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\MeController;
 use App\Http\Controllers\StudentController;
+use App\Http\Controllers\CourseController;
+use App\Http\Controllers\CurriculumController;
+use App\Http\Controllers\ScheduleController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -15,5 +18,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', MeController::class);
 });
 
-// Assuming store is public for registration or requires specific middleware later.
+// Main Entities
 Route::post('/students', [StudentController::class, 'store']);
+
+Route::apiResource('courses', CourseController::class);
+Route::apiResource('curriculums', CurriculumController::class);
+Route::apiResource('schedules', ScheduleController::class);

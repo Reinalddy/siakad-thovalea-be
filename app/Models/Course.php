@@ -4,28 +4,28 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Student extends Model
+class Course extends Model
 {
     use HasFactory, HasUuids, SoftDeletes;
 
     protected $fillable = [
-        'user_id',
-        'prodi_id',
-        'nim',
-        'batch',
+        'code',
+        'name',
+        'sks',
+        'semester_type',
+        'prerequisite_course_id'
     ];
 
-    public function user()
+    public function prerequisite()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Course::class, 'prerequisite_course_id');
     }
 
-    public function studyProgram()
+    public function curriculums()
     {
-        return $this->belongsTo(StudyProgram::class, 'prodi_id');
+        return $this->belongsToMany(Curriculum::class);
     }
 }
