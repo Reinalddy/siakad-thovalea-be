@@ -36,6 +36,24 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('approve/{student_id}', [\App\Http\Controllers\KrsController::class, 'approve'])
             ->middleware('role:Lecturer|Admin');
     });
+
+    // Grading, KHS, & Transcript Engine
+    Route::prefix('grades')->group(function () {
+        // Public settings viewing
+        Route::get('settings', [\App\Http\Controllers\ScoreController::class, 'getSettings']);
+
+        // Only Lecturers input grades bulk
+        Route::post('input-batch', [\App\Http\Controllers\ScoreController::class, 'inputBatch'])
+            ->middleware('role:Lecturer|Admin');
+
+        // Students view their specific KHS/IPS for a period
+        Route::get('khs/{student_id}/{krs_period_id}', [\App\Http\Controllers\ScoreController::class, 'getKhs'])
+            ->middleware('role:Student|Admin|Lecturer');
+
+        // Students view their total IPK transcript
+        Route::get('transcript/{student_id}', [\App\Http\Controllers\ScoreController::class, 'getTranscript'])
+            ->middleware('role:Student|Admin|Lecturer');
+    });
 });
 
 // Assuming store is public for registration or requires specific middleware later.
