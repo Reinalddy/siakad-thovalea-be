@@ -10,19 +10,14 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('courses', function (Blueprint $table) {
+        Schema::create('krs_periods', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('code')->unique();
             $table->string('name');
-            $table->integer('sks');
-            $table->enum('semester_type', ['Odd', 'Even']);
-            $table->foreignUuid('prerequisite_course_id')->nullable();
+            $table->boolean('is_active')->default(false);
+            $table->date('start_date');
+            $table->date('end_date');
             $table->softDeletes();
             $table->timestamps();
-        });
-
-        Schema::table('courses', function (Blueprint $table) {
-            $table->foreign('prerequisite_course_id')->references('id')->on('courses')->nullOnDelete();
         });
     }
 
@@ -31,6 +26,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('courses');
+        Schema::dropIfExists('krs_periods');
     }
 };

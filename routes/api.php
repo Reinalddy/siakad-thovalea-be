@@ -21,6 +21,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('courses', CourseController::class);
     Route::apiResource('curriculums', CurriculumController::class);
     Route::apiResource('schedules', ScheduleController::class);
+
+    // KRS Registration Engine
+    Route::prefix('krs')->group(function () {
+        // Students, Lecturers, Admins
+        Route::get('available-courses', [\App\Http\Controllers\KrsController::class, 'getAvailableCourses'])
+            ->middleware('role:Student|Lecturer|Admin');
+
+        // Only Students can Enroll
+        Route::post('enroll', [\App\Http\Controllers\KrsController::class, 'enroll'])
+            ->middleware('role:Student');
+
+        // Only Lecturers (Advisors) or Admins can Approve
+        Route::patch('approve/{student_id}', [\App\Http\Controllers\KrsController::class, 'approve'])
+            ->middleware('role:Lecturer|Admin');
+    });
 });
 
 // Assuming store is public for registration or requires specific middleware later.
