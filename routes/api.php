@@ -54,7 +54,25 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('transcript/{student_id}', [\App\Http\Controllers\ScoreController::class, 'getTranscript'])
             ->middleware('role:Student|Admin|Lecturer');
     });
+
+    // UKT & Financial Management Engine
+    Route::prefix('finance')->group(function () {
+        // Admin mass-billing generator
+        Route::post('generate-bills', [\App\Http\Controllers\PaymentController::class, 'generateMassBills'])
+            ->middleware('role:Admin');
+
+        // Student views their own generated bills
+        Route::get('my-bills', [\App\Http\Controllers\PaymentController::class, 'myBills'])
+            ->middleware('role:Student');
+
+        // Student initiates a checkout process (Returns mock VA/URL)
+        Route::post('checkout', [\App\Http\Controllers\PaymentController::class, 'checkout'])
+            ->middleware('role:Student');
+    });
 });
 
 // Assuming store is public for registration or requires specific middleware later.
 Route::post('/students', [StudentController::class, 'store']);
+
+// Public Webhook for Payment Gateways (Outside auth:sanctum but protected by signature later)
+Route::post('finance/webhook', [\App\Http\Controllers\PaymentController::class, 'handleWebhook']);

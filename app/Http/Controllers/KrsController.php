@@ -8,6 +8,7 @@ use App\Models\KrsItem;
 use App\Models\KrsPeriod;
 use App\Models\Schedule;
 use App\Models\StudentStat;
+use App\Services\PaymentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +17,12 @@ use Illuminate\Support\Facades\Validator;
 
 class KrsController extends BaseController
 {
+    protected PaymentService $paymentService;
+
+    public function __construct(PaymentService $paymentService)
+    {
+        $this->paymentService = $paymentService;
+    }
     /**
      * Get available courses/schedules for the current active period.
      */
@@ -60,6 +67,14 @@ class KrsController extends BaseController
             $validated = $validator->validated();
             $scheduleId = $validated['schedule_id'];
             $studentId = $validated['student_id'];
+
+            // --- FINANCIAL BLOCKING GATE ---
+            // Student must have zero unpaid UKT bills.
+            $canEnroll = $this->paymentService->canStudentEnroll($studentId, KrsPeriod::where('is_active', true)->value('id') ?? '');
+
+            if (!$canEnroll) {
+                return $this->sendError('Financial Hold', ['payment' => ['You have unpaid UKT tuition bills. Please complete your payment to unlock KRS registration.']], 422);
+            }
 
             // --- Validation 1: Period Activeness ---
             $activePeriod = KrsPeriod::where('is_active', true)
