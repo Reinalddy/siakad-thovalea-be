@@ -2,49 +2,76 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
+use App\Services\AuthService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
+    protected $authService;
+
+    // Inject AuthService ke Controller
+    public function __construct(AuthService $authService)
+    {
+        $this->authService = $authService;
+    }
+
     public function login(Request $request)
     {
+        // 1. Validasi Request
         $validateRequest = Validator::make($request->all(), [
-            "email" => "required",
+            "email"    => "required|email",
             "password" => "required",
         ]);
 
         if ($validateRequest->fails()) {
-            return $this->sendError("Validation Error", $validateRequest->errors(), 422);
+            return response()->json([
+                'status'  => 'error',
+                'message' => $validateRequest->errors()->first(),
+                'data'    => $validateRequest->errors(), // Ubah dari data() ke errors()
+            ], 422); // Jangan lupa kasih HTTP status 422 untuk validasi gagal
         }
 
+        // 2. Eksekusi Logika via Service
         try {
-            $user = User::where('email', $request->email)->first();
-            if (!$user) {
-                return $this->sendError("User not found", [], 404);
-            }
+            // Panggil fungsi login dari service
+            $result = $this->authService->login($request->email, $request->password);
 
-            if (!Hash::check($request->password, $user->password)) {
-                return $this->sendError("Invalid password", [], 401);
-            }
+            // 3. Response Sukses
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'User logged in successfully',
+                'data'    => $result,
+            ], 200);
 
-            $token = $user->createToken('auth_token')->plainTextToken;
-
-            return $this->sendResponse([
-                'token' => $token,
-                'user' => $user,
-            ], 'User logged in successfully');
         } catch (\Exception $e) {
-            $message = [
-                "line" => $e->getLine(),
-                "file" => $e->getFile(),
-                "message" => $e->getMessage(),
-            ];
-            Log::critical($message);
-            return $this->sendError($e->getMessage(), $message, 500);
+            // Ambil status code dari Exception di Service (401 atau 404)
+            // Jika tidak ada code (misal error syntax), set default ke 500
+            $statusCode = $e->getCode() ?: 500;
+
+            // Jika error 500 (Fatal Error), catat di Log::critical
+            if ($statusCode == 500) {
+                $errorData = [
+                    "line"    => $e->getLine(),
+                    "file"    => $e->getFile(),
+                    "message" => $e->getMessage(),
+                ];
+                Log::critical('Login System Error:', $errorData);
+                
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Internal Server Error',
+                    'data'    => $errorData,
+                ], 500);
+            }
+
+            // Response untuk error 404 (Not Found) & 401 (Invalid Password)
+            return response()->json([
+                'status'  => 'error',
+                'message' => $e->getMessage(),
+                'data'    => [],
+            ], $statusCode);
         }
     }
 }
