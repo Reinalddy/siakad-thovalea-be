@@ -19,10 +19,10 @@ class RoleAndUserSeeder extends Seeder
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
         // 1. Buat Role
-        Role::create(['name' => 'Super Admin']);
-        Role::create(['name' => 'Admin BAAK']);
-        Role::create(['name' => 'Dosen']);
-        Role::create(['name' => 'Mahasiswa']);
+        Role::create(['name' => 'Super Admin', 'guard_name' => 'sanctum']);
+        Role::create(['name' => 'Admin BAAK', 'guard_name' => 'sanctum']);
+        Role::create(['name' => 'Dosen', 'guard_name' => 'sanctum']);
+        Role::create(['name' => 'Mahasiswa', 'guard_name' => 'sanctum']);
 
         // 2. Buat Akun Super Admin (Biar kamu bisa langsung login)
         $superAdmin = User::create([
