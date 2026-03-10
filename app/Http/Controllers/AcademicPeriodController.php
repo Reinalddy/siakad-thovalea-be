@@ -79,6 +79,28 @@ class AcademicPeriodController extends Controller
         }
     }
 
+    public function update(AcademicPeriodRequest $request, $id)
+    {
+        try {
+            $period = $this->periodService->update($id, $request->validated());
+            
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Periode Akademik berhasil diperbarui',
+                'data'    => $period,
+            ], 200);
+            
+        } catch (\Exception $e) {
+            Log::critical("Update Period Error:", ["message" => $e->getMessage()]);
+            $statusCode = $e->getCode() ?: 500;
+            return response()->json([
+                'status'  => 'error',
+                'message' => $e->getMessage(),
+                'data'    => [],
+            ], $statusCode);
+        }
+    }
+
     public function destroy($id)
     {
         try {

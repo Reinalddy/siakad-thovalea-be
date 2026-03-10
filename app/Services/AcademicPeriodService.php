@@ -58,6 +58,25 @@ class AcademicPeriodService
         }
     }
 
+    public function update($id, array $data)
+    {
+        $period = AcademicPeriod::find($id);
+
+        if (!$period) {
+            throw new Exception('Periode Akademik tidak ditemukan.', 404);
+        }
+
+        // Opsional: Cegah edit kalau periode sudah 'Selesai'
+        if ($period->status === 'Selesai') {
+            throw new Exception('Periode yang sudah selesai tidak bisa diubah lagi.', 403);
+        }
+
+        // Update data
+        $period->update($data);
+
+        return $period;
+    }
+
     public function delete($id)
     {
         $period = AcademicPeriod::find($id);

@@ -19,5 +19,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/periods', [AcademicPeriodController::class, 'store']);
         Route::delete('/periods/{id}', [AcademicPeriodController::class, 'destroy']);
         Route::put('/periods/{id}/set-active', [AcademicPeriodController::class, 'setActive']);
+        Route::put('/periods/{id}', [AcademicPeriodController::class, 'update']);
     });
 });
