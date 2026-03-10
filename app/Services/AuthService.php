@@ -43,4 +43,12 @@ class AuthService
             ],
         ];
     }
+
+    public function logout($user)
+    {
+        // Menghapus token yang digunakan untuk request saat ini
+        $user->currentAccessToken()->delete();
+        
+        return true;
+    }
 }

@@ -89,4 +89,30 @@ class AuthController extends Controller
             ], 500);
         }
     }
+
+    public function logout(Request $request)
+    {
+        try {
+            $this->authService->logout($request->user());
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'User logged out successfully',
+                'data'    => [],
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::critical('Logout Error:', [
+                "line"    => $e->getLine(),
+                "file"    => $e->getFile(),
+                "message" => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Gagal melakukan logout',
+                'data'    => [],
+            ], 500);
+        }
+    }
 }
