@@ -19,7 +19,6 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        // 1. Validasi Request
         $validateRequest = Validator::make($request->all(), [
             "email"    => "required|email",
             "password" => "required",
@@ -29,16 +28,13 @@ class AuthController extends Controller
             return response()->json([
                 'status'  => 'error',
                 'message' => $validateRequest->errors()->first(),
-                'data'    => $validateRequest->errors(), // Ubah dari data() ke errors()
-            ], 422); // Jangan lupa kasih HTTP status 422 untuk validasi gagal
+                'data'    => $validateRequest->errors(),
+            ], 422);
         }
 
-        // 2. Eksekusi Logika via Service
         try {
-            // Panggil fungsi login dari service
             $result = $this->authService->login($request->email, $request->password);
 
-            // 3. Response Sukses
             return response()->json([
                 'status'  => 'success',
                 'message' => 'User logged in successfully',
@@ -46,32 +42,51 @@ class AuthController extends Controller
             ], 200);
 
         } catch (\Exception $e) {
-            // Ambil status code dari Exception di Service (401 atau 404)
-            // Jika tidak ada code (misal error syntax), set default ke 500
             $statusCode = $e->getCode() ?: 500;
 
-            // Jika error 500 (Fatal Error), catat di Log::critical
-            if ($statusCode == 500) {
-                $errorData = [
-                    "line"    => $e->getLine(),
-                    "file"    => $e->getFile(),
-                    "message" => $e->getMessage(),
-                ];
-                Log::critical('Login System Error:', $errorData);
+            $errorData = [
+                "line"    => $e->getLine(),
+                "file"    => $e->getFile(),
+                "message" => $e->getMessage(),
+            ];
+            Log::critical('Login System Error:', $errorData);
                 
-                return response()->json([
-                    'status'  => 'error',
-                    'message' => 'Internal Server Error',
-                    'data'    => $errorData,
-                ], 500);
-            }
-
-            // Response untuk error 404 (Not Found) & 401 (Invalid Password)
             return response()->json([
                 'status'  => 'error',
-                'message' => $e->getMessage(),
-                'data'    => [],
+                'message' => 'Internal Server Error',
+                'data'    => $errorData,
             ], $statusCode);
+        }
+    }
+
+    public function me(Request $request)
+    {
+        try {
+            $user = $request->user();
+
+            return response()->json([
+                'status' => 'success',
+                'data' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->getRoleNames()->first()
+                ]
+            ]);
+        } catch (\Exception $e) {
+            $message = [
+                "line" => $e->getLine(),
+                "file"=> $e->getFile(),
+                "message"=> $e->getMessage(),
+            ];
+
+            Log::critical($message);
+
+            return response()->json([
+                "status"=> "error",
+                "message"=> "Something went wrong",
+                "data" => $message
+            ], 500);
         }
     }
 }
