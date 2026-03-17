@@ -2,146 +2,72 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\CourseResource;
-use App\Models\Course;
-use Illuminate\Http\JsonResponse;
+use App\Http\Requests\CourseRequest;
+use App\Services\CourseService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
 
-class CourseController extends BaseController
+class CourseController extends Controller
 {
-    /**
-     * Display a listing of courses, filterable by study_program_id via curriculum.
-     */
-    public function index(Request $request): JsonResponse
+    protected $courseService;
+
+    public function __construct(CourseService $courseService)
     {
-        $query = Course::query()->with('prerequisite');
-
-        // Optional filter by Study Program ID
-        if ($request->has('study_program_id')) {
-            $query->whereHas('curriculums', function ($q) use ($request) {
-                $q->where('study_program_id', $request->query('study_program_id'));
-            });
-        }
-
-        $courses = $query->paginate(15);
-
-        return $this->sendResponse(
-            [
-                'courses' => CourseResource::collection($courses),
-                'meta' => [
-                    'current_page' => $courses->currentPage(),
-                    'last_page' => $courses->lastPage(),
-                    'total' => $courses->total(),
-                ]
-            ],
-            'Courses retrieved successfully.'
-        );
+        $this->courseService = $courseService;
     }
 
-    /**
-     * Store a newly created course.
-     */
-    public function store(Request $request): JsonResponse
+    public function index()
     {
-        $validator = Validator::make($request->all(), [
-            'code' => ['required', 'string', 'unique:courses'],
-            'name' => ['required', 'string', 'max:255'],
-            'sks' => ['required', 'integer', 'min:1'],
-            'semester_type' => ['required', 'in:Odd,Even'],
-            'prerequisite_course_id' => ['nullable', 'exists:courses,id'],
-        ]);
+        $courses = $this->courseService->getAll();
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Berhasil mengambil data mata kuliah',
+            'data'    => $courses,
+        ], 200);
+    }
 
-        if ($validator->fails()) {
-            return $this->sendError('Validation Error', $validator->errors()->toArray(), 422);
+    public function store(CourseRequest $request)
+    {
+        try {
+            $course = $this->courseService->create($request->validated());
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Mata kuliah berhasil ditambahkan',
+                'data'    => $course,
+            ], 201);
+        } catch (\Exception $e) {
+            Log::critical("Create Course Error:", ["message" => $e->getMessage(), "line" => $e->getLine(), "file" => $e->getFile()]);
+            return response()->json(['status' => 'error', 'message' => 'Internal Server Error'], 500);
         }
 
+    }
+
+    public function update(CourseRequest $request, $id)
+    {
         try {
-            DB::beginTransaction();
-
-            $course = Course::create($validator->validated());
-
-            DB::commit();
-
-            return $this->sendResponse(new CourseResource($course), 'Course created successfully.', 201);
+            $course = $this->courseService->update($id, $request->validated());
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Mata kuliah berhasil diperbarui',
+                'data'    => $course,
+            ], 200);
         } catch (\Exception $e) {
-            DB::rollBack();
-
-            Log::error($e->getMessage(), [
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            return $this->sendError('Server Error', [], 500);
+            Log::critical('update course error', ['message'=> $e->getMessage()]);
+            return response()->json(['status' => 'error', 'message' => 'Internal Server Error'], 500);
         }
     }
 
-    /**
-     * Update the specified course.
-     */
-    public function update(Request $request, string $id): JsonResponse
-    {
-        $validator = Validator::make($request->all(), [
-            'code' => ['required', 'string', 'unique:courses,code,' . $id],
-            'name' => ['required', 'string', 'max:255'],
-            'sks' => ['required', 'integer', 'min:1'],
-            'semester_type' => ['required', 'in:Odd,Even'],
-            'prerequisite_course_id' => ['nullable', 'exists:courses,id'],
-        ]);
-
-        if ($validator->fails()) {
-            return $this->sendError('Validation Error', $validator->errors()->toArray(), 422);
-        }
-
-        try {
-            DB::beginTransaction();
-
-            $course = Course::findOrFail($id);
-            $course->update($validator->validated());
-
-            DB::commit();
-
-            return $this->sendResponse(new CourseResource($course), 'Course updated successfully.');
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            Log::error($e->getMessage(), [
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            return $this->sendError('Server Error', [], 500);
-        }
-    }
-
-    /**
-     * Remove the specified course.
-     */
-    public function destroy(string $id): JsonResponse
+    public function destroy($id)
     {
         try {
-            DB::beginTransaction();
-
-            $course = Course::findOrFail($id);
-            $course->delete(); // Soft delete applied via Model
-
-            DB::commit();
-
-            return $this->sendResponse([], 'Course deleted successfully.');
+            $this->courseService->delete($id);
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Mata kuliah berhasil dihapus',
+            ], 200);
         } catch (\Exception $e) {
-            DB::rollBack();
-
-            Log::error($e->getMessage(), [
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            return $this->sendError('Server Error', [], 500);
+            Log::critical('delete course error', ['message'=> $e->getMessage()]);
+            return response()->json(['status' => 'error', 'message' => 'Internal Server Error'], 500);
         }
     }
 }

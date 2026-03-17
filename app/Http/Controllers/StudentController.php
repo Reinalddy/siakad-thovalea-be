@@ -2,80 +2,66 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\UserResource;
-use App\Models\Student;
-use App\Models\User;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
+use App\Http\Requests\StudentRequest;
+use App\Services\StudentService;
 
-class StudentController extends BaseController
+class StudentController extends Controller
 {
-    /**
-     * Store a newly created student in storage.
-     * 
-     * @param Request $request
-     * @return JsonResponse
-     */
-    public function store(Request $request): JsonResponse
+    protected $studentService;
+
+    public function __construct(StudentService $studentService)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'nim' => ['required', 'string', 'unique:students'],
-            'batch' => ['required', 'integer', 'min:2000', 'max:2100'],
-            'prodi_id' => ['required', 'exists:study_programs,id'],
-        ]);
+        $this->studentService = $studentService;
+    }
 
-        if ($validator->fails()) {
-            return $this->sendError('Validation Error', $validator->errors()->toArray(), 422);
-        }
+    public function index()
+    {
+        $students = $this->studentService->getAll();
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Berhasil mengambil data mahasiswa',
+            'data'    => $students,
+        ], 200);
+    }
 
+    public function store(StudentRequest $request)
+    {
         try {
-            DB::beginTransaction();
-
-            // 1. Create User
-            $user = User::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
-            ]);
-
-            // 2. Assign Role "Student" (assuming Spatie permissions are seeded)
-            $user->assignRole('Student');
-
-            // 3. Create Student Profile
-            $user->student()->create([
-                'nim' => $request->nim,
-                'batch' => $request->batch,
-                'prodi_id' => $request->prodi_id,
-            ]);
-
-            DB::commit();
-
-            // Load the newly created relationships to return a structured response
-            $user->load(['student.studyProgram']);
-
-            return $this->sendResponse(
-                new UserResource($user),
-                'Student registered successfully.',
-                201
-            );
-
+            $student = $this->studentService->create($request->validated());
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Mahasiswa berhasil ditambahkan, Akun Login otomatis dibuat.',
+                'data'    => $student,
+            ], 201);
         } catch (\Exception $e) {
-            DB::rollBack();
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
 
-            Log::error($e->getMessage(), [
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString(),
-            ]);
+    public function update(StudentRequest $request, $id)
+    {
+        try {
+            $student = $this->studentService->update($id, $request->validated());
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Data Mahasiswa dan Akun berhasil diperbarui',
+                'data'    => $student,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], $e->getCode() ?: 500);
+        }
+    }
 
-            return $this->sendError('Server Error', [], 500);
+    public function destroy($id)
+    {
+        try {
+            $this->studentService->delete($id);
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Profil dan Akun Mahasiswa berhasil dihapus permanen',
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], $e->getCode() ?: 500);
         }
     }
 }

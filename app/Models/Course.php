@@ -4,28 +4,17 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Course extends Model
 {
-    use HasFactory, HasUuids, SoftDeletes;
+    use HasFactory;
 
+    // Sesuaikan kolom ini dengan file migration create_courses_table kamu
     protected $fillable = [
-        'code',
-        'name',
+        'kode_mk',
+        'nama_mk',
         'sks',
-        'semester_type',
-        'prerequisite_course_id'
+        'semester_plot', // Semester plot default (1-8)
+        'tipe',    // Wajib / Pilihan
     ];
-
-    public function prerequisite()
-    {
-        return $this->belongsTo(Course::class, 'prerequisite_course_id');
-    }
-
-    public function curriculums()
-    {
-        return $this->belongsToMany(Curriculum::class);
-    }
 }

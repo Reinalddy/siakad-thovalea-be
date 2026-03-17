@@ -5,27 +5,28 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\SoftDeletes;
-
 class Student extends Model
 {
-    use HasFactory, HasUuids, SoftDeletes;
+    use HasFactory;
 
     protected $fillable = [
         'user_id',
-        'prodi_id',
+        'dosen_pa_id', // Tambahan dari kamu
         'nim',
-        'batch',
+        'prodi',
+        'angkatan',
+        'status_mahasiswa',
+        'ipk',         // Tambahan dari kamu
     ];
 
+    // Relasi ke User (Satu mahasiswa punya satu akun login)
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    public function studyProgram()
+    public function dosen_pa()
     {
-        return $this->belongsTo(StudyProgram::class, 'prodi_id');
+        return $this->belongsTo(Lecturer::class, 'dosen_pa_id');
     }
 }

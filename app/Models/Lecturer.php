@@ -5,16 +5,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\SoftDeletes;
-
 class Lecturer extends Model
 {
-    use HasFactory, HasUuids, SoftDeletes;
+    use HasFactory;
 
     protected $fillable = [
         'user_id',
         'nidn',
+        'prodi',
+        'status_dosen',
     ];
 
     public function user()
